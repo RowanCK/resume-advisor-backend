@@ -1,0 +1,43 @@
+version: "3.9"
+
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: mysql-db
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: resume_advisor
+      MYSQL_USER: user
+      MYSQL_PASSWORD: password
+    ports:
+      - "3306:3306"
+    volumes:
+      # - mysql_data:/var/lib/mysql # For production
+      - ./mysql-init:/docker-entrypoint-initdb.d
+    networks:
+      - backend_network
+
+  api:
+    build: ./api
+    container_name: flask-api
+    restart: always
+    depends_on:
+      - mysql
+    ports:
+      - "6666:6666" # 對應 app.py 的 port
+    environment:
+      MYSQL_HOST: mysql
+      MYSQL_USER: user
+      MYSQL_PASSWORD: password
+      MYSQL_DB: resume_advisor
+    networks:
+      - backend_network
+
+volumes:
+  mysql_data:
+
+
+networks:
+  backend_network:
+    driver: bridge

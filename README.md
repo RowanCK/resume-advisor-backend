@@ -44,3 +44,10 @@ It stores structured user and job data, and provides AI-assisted recommendations
 ```bash
 git clone https://github.com/<your-username>/resume-advisor-backend.git
 cd resume-advisor-backend
+
+---
+
+## Run
+```bash
+docker compose up --build
+docker compose up
