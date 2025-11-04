@@ -1,0 +1,21 @@
+"""
+API Endpoints Package
+Includes route blueprints for different resources.
+"""
+
+from .auth import auth_bp
+from .users import users_bp
+from .resumes import resumes_bp
+from .coverletters import coverletters_bp
+from .jobpostings import jobpostings_bp
+from .ai import ai_bp
+
+# Collect all blueprints here
+__all__ = [
+    'auth_bp',
+    'users_bp',
+    'resumes_bp',
+    'coverletters_bp',
+    'jobpostings_bp',
+    'ai_bp'
+]
