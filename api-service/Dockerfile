@@ -11,11 +11,9 @@ RUN apt-get update && \
     gcc \
     && rm -rf /var/lib/apt/lists/*
 
-COPY requirements.txt .
+COPY . /app/
 RUN pip install --upgrade pip
 RUN pip install -r requirements.txt
-
-COPY . .
 
 EXPOSE 6666
 CMD ["python", "app.py"]

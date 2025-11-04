@@ -19,22 +19,24 @@ services:
       - backend_network
 
   api:
-    build: ./api
+    build: ./api-service
     container_name: flask-api
-    restart: always
+    # restart: always
     depends_on:
       - mysql
     ports:
       - "6666:6666"
-    environment:
-      MYSQL_HOST: mysql
-      MYSQL_USER: user
-      MYSQL_PASSWORD: password
-      MYSQL_DB: resume_advisor
+    # environment:
+    #   MYSQL_HOST: mysql
+    #   MYSQL_USER: user
+    #   MYSQL_PASSWORD: password
+    #   MYSQL_DB: resume_advisor
+    env_file:
+      - ./api-service/.env
     networks:
       - backend_network
     volumes:
-      - ./api:/app
+      - ./api-service:/app
 
 volumes:
   mysql_data:
