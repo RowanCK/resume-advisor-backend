@@ -7,19 +7,19 @@ from flask import Blueprint
 from .endpoints import (
     health_bp,
     auth_bp,
-    users_bp,
+    user_bp,
     resumes_bp,
     cover_letters_bp,
     job_postings_bp,
     ai_bp
 )
 
-api_bp = Blueprint('api', __name__, url_prefix='/api')
+api_bp = Blueprint('api', __name__, url_prefix='/api/v1')
 
 # Register all sub-blueprints
 api_bp.register_blueprint(health_bp)
-api_bp.register_blueprint(auth_bp)
-api_bp.register_blueprint(users_bp)
+api_bp.register_blueprint(auth_bp, url_prefix='/auth')
+api_bp.register_blueprint(user_bp)
 api_bp.register_blueprint(resumes_bp)
 api_bp.register_blueprint(cover_letters_bp)
 api_bp.register_blueprint(job_postings_bp)

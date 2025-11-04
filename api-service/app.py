@@ -29,7 +29,7 @@ def create_app(config=None):
     
     # Register blueprints
     from api.routes import api_bp
-    app.register_blueprint(api_bp, url_prefix='/api')
+    app.register_blueprint(api_bp)
     
     # Register error handlers
     register_error_handlers(app)

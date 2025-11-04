@@ -23,23 +23,21 @@ def health_check():
     Returns:
         JSON response with API and DB status.
     """
-    # try:
-    #     # Check database connection
-    #     mysql = get_db()
-    #     cursor = mysql.connection.cursor()
-    #     cursor.execute("SELECT 1")
-    #     cursor.fetchone()
-    #     cursor.close()
-    #     db_status = "connected"
-    # except Exception as e:
-    #     current_app.logger.error(f"Database health check failed: {str(e)}")
-    #     db_status = "unavailable"
-    
-    return jsonify({'status': 'OK'}), 200
+    try:
+        # Check database connection
+        mysql = get_db()
+        cursor = mysql.connection.cursor()
+        cursor.execute("SELECT 1")
+        cursor.fetchone()
+        cursor.close()
+        db_status = "connected"
+    except Exception as e:
+        current_app.logger.error(f"Database health check failed: {str(e)}")
+        db_status = "unavailable"
 
-    # return jsonify({
-    #     "success": True,
-    #     "status": "ok",
-    #     "server": "running",
-    #     "database": db_status
-    # }), 200
+    return jsonify({
+        "success": True,
+        "status": "ok",
+        "server": "running",
+        "database": db_status
+    }), 200

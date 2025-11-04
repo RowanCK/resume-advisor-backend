@@ -21,7 +21,7 @@ services:
   api:
     build: ./api-service
     container_name: flask-api
-    # restart: always
+    restart: always
     depends_on:
       - mysql
     ports:

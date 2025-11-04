@@ -6,9 +6,14 @@ USE resume_advisor;
 -- ---------- Users ----------
 CREATE TABLE IF NOT EXISTS users (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
-    name TEXT,
+    first_name VARCHAR(255) NOT NULL,
+    last_name VARCHAR(255) NOT NULL,
     email VARCHAR(255) NOT NULL UNIQUE,
-    location TEXT,
+    password VARCHAR(255) NOT NULL,
+    phone VARCHAR(50),
+    location VARCHAR(255),
+    linkedin_profile_url VARCHAR(255),
+    github_profile_url VARCHAR(255),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
