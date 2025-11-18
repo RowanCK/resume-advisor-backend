@@ -70,10 +70,14 @@ def register_error_handlers(app):
 # --------------------
 if __name__ == '__main__':
     app = create_app()
+
+    print("=" * 50)
+    print("Resume Advisor Backend Server Starting...")
+    print("=" * 50)
     
     # Get configuration from environment
     host = os.getenv('FLASK_HOST', '0.0.0.0')
-    port = int(os.getenv('FLASK_PORT', 6666))
+    port = int(os.getenv('FLASK_PORT', 8080))
     debug = os.getenv('FLASK_DEBUG', 'True').lower() == 'true'
     
     print(f"Starting Resume Advisor API on {host}:{port}")

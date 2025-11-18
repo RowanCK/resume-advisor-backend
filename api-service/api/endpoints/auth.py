@@ -1,5 +1,5 @@
 # api/endpoints/auth.py
-from flask import Blueprint, request, jsonify, current_app
+from flask import Blueprint, request, current_app
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime, timedelta, timezone
 from ..utils import get_db, success_response, error_response
@@ -117,4 +117,4 @@ def login():
     }
     token = jwt.encode(payload, secret_key, algorithm='HS256')
     
-    return success_response({'token': token})
+    return success_response({'user_id': user_id, 'token': token})

@@ -4,7 +4,7 @@ Handles user profile and related resources
 """
 
 from flask import Blueprint, request, jsonify
-from ..middlewares import require_auth, require_owner, handle_errors
+from ..auth_utils import require_auth, require_owner, handle_errors
 from ..utils import get_db, success_response, error_response, validate_required_fields
 
 user_bp = Blueprint('user', __name__, url_prefix='/user')

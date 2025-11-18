@@ -1,5 +1,5 @@
 """
-API Middlewares
+API Authentication Utilities
 Includes: JWT validation, permission checks, and error handling.
 """
 
@@ -51,7 +51,7 @@ def require_auth(f):
             )
             
             # Add user_id to kwargs for the route function
-            kwargs['user_id'] = payload['user_id']
+            kwargs['auth_user_id'] = payload['user_id']
             
         except jwt.ExpiredSignatureError:
             return jsonify({

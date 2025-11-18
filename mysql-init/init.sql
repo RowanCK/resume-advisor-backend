@@ -3,17 +3,12 @@
 CREATE DATABASE IF NOT EXISTS resume_advisor;
 USE resume_advisor;
 
--- ---------- Users ----------
+-- ---------- Core ----------
 CREATE TABLE IF NOT EXISTS users (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
-    first_name VARCHAR(255) NOT NULL,
-    last_name VARCHAR(255) NOT NULL,
+    name VARCHAR(255),
     email VARCHAR(255) NOT NULL UNIQUE,
-    password VARCHAR(255) NOT NULL,
-    phone VARCHAR(50),
     location VARCHAR(255),
-    linkedin_profile_url VARCHAR(255),
-    github_profile_url VARCHAR(255),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -91,11 +86,11 @@ CREATE TABLE IF NOT EXISTS resumes (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     user_id BIGINT NOT NULL,
     title TEXT NOT NULL,
-    template_key TEXT DEFAULT 'classic',
+    template_key TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     is_primary BOOLEAN DEFAULT FALSE,
-    FOREIGN KEY (user_id) REFERENCES users(id)
+    FOREIGN KEY (user_id) REFERENCES resumes(id)
 );
 
 CREATE TABLE IF NOT EXISTS resume_sections (
@@ -139,6 +134,8 @@ CREATE TABLE IF NOT EXISTS resume_educations (
     FOREIGN KEY (lib_education_id) REFERENCES lib_educations(id)
 );
 
+CREATE INDEX idx_resume_educations_order ON resume_educations(resume_id, position);
+
 CREATE TABLE IF NOT EXISTS resume_projects (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     resume_id BIGINT NOT NULL,
@@ -169,6 +166,8 @@ CREATE TABLE IF NOT EXISTS resume_skills (
     FOREIGN KEY (resume_id) REFERENCES resumes(id),
     FOREIGN KEY (lib_skill_id) REFERENCES lib_skills(id)
 );
+
+CREATE INDEX idx_resume_skills_order ON resume_skills(resume_id, position);
 
 CREATE TABLE IF NOT EXISTS resume_summary (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
