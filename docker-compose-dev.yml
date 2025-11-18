@@ -1,6 +1,21 @@
 version: "3.9"
 
 services:
+  nginx:
+    image: nginx:latest
+    container_name: resume-advisor-nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/conf.d:/etc/nginx/conf.d
+      - ./certs:/etc/ssl
+    depends_on:
+      - api
+    restart: unless-stopped
+    networks:
+      - resume-advisor-network
+
   mysql:
     image: mysql:8.0
     container_name: mysql-db
@@ -16,7 +31,7 @@ services:
       # - mysql_data:/var/lib/mysql # For production
       - ./mysql-init:/docker-entrypoint-initdb.d
     networks:
-      - backend_network
+      - resume-advisor-network
 
   api:
     build: ./api-service
@@ -34,7 +49,7 @@ services:
     env_file:
       - ./.env
     networks:
-      - backend_network
+      - resume-advisor-network
     volumes:
       - ./api-service:/app
 
@@ -43,5 +58,5 @@ volumes:
 
 
 networks:
-  backend_network:
+  resume-advisor-network:
     driver: bridge
