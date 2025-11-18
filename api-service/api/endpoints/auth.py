@@ -45,11 +45,11 @@ def signup():
     if cursor.fetchone():
         cursor.close()
         return error_response('Email already registered', 400)
-    
+
     # Insert user into DB
     cursor.execute("""
     INSERT INTO users (
-        first_name, last_name, email, password, phone, location, linkedin_profile_url, github_profile_url
+        first_name, last_name, email, password, phone, location, linkedin, github
     ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)""",
     (
         data['first_name'],

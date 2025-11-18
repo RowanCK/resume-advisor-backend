@@ -2,7 +2,7 @@ FROM python:3.10-slim
 
 WORKDIR /app
 
-# Install the system packages required by Flask-MySQLdb
+# Install system packages
 RUN apt-get update && \
     apt-get install -y \
     pkg-config \
@@ -11,9 +11,13 @@ RUN apt-get update && \
     gcc \
     && rm -rf /var/lib/apt/lists/*
 
+COPY requirements.txt /app/
+
+RUN pip install --upgrade pip && \
+    pip install --no-cache-dir -r requirements.txt
+
 COPY . /app/
-RUN pip install --upgrade pip
-RUN pip install -r requirements.txt
 
 EXPOSE 8080
+
 CMD ["python", "app.py"]

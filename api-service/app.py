@@ -7,6 +7,7 @@ import os
 from flask import Flask, jsonify
 from flask_mysqldb import MySQL
 from flask_cors import CORS
+from flasgger import Swagger
 
 # --------------------
 # App Factory
@@ -23,6 +24,49 @@ def create_app(config=None):
     # Initialize extensions
     mysql = MySQL(app)
     CORS(app)  # Enable CORS for frontend
+    
+    # Initialize Swagger
+    swagger_config = {
+        "headers": [],
+        "specs": [
+            {
+                "endpoint": 'apispec',
+                "route": '/apispec.json',
+                "rule_filter": lambda rule: True,
+                "model_filter": lambda tag: True,
+            }
+        ],
+        "static_url_path": "/flasgger_static",
+        "swagger_ui": True,
+        "specs_route": "/docs",
+        "url_prefix": None
+    }
+    
+    swagger_template = {
+        "swagger": "2.0",
+        "info": {
+            "title": "Resume Advisor API",
+            "description": "API for Resume Advisor Application",
+            "version": "1.0.0",
+            "contact": {
+                "name": "API Support",
+                "email": "support@resumeadvisor.com"
+            }
+        },
+        "host": "localhost",
+        "basePath": "/api/v1",
+        "schemes": ["https", "http"],
+        "securityDefinitions": {
+            "Bearer": {
+                "type": "apiKey",
+                "name": "Authorization",
+                "in": "header",
+                "description": "JWT Authorization header using the Bearer scheme. Example: 'Bearer {token}'"
+            }
+        }
+    }
+    
+    Swagger(app, config=swagger_config, template=swagger_template)
     
     # Make mysql accessible to blueprints
     app.mysql = mysql
@@ -82,6 +126,6 @@ if __name__ == '__main__':
     
     print(f"Starting Resume Advisor API on {host}:{port}")
     print(f"Debug mode: {debug}")
+    print(f"Swagger UI available at: http://{host}:{port}/api/docs")
     
     app.run(host=host, port=port, debug=debug)
-

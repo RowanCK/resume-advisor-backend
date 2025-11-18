@@ -3,181 +3,116 @@
 CREATE DATABASE IF NOT EXISTS resume_advisor;
 USE resume_advisor;
 
--- ---------- Core ----------
+-- ---------- Core Tables ----------
+
 CREATE TABLE IF NOT EXISTS users (
-    id BIGINT AUTO_INCREMENT PRIMARY KEY,
-    name VARCHAR(255),
-    email VARCHAR(255) NOT NULL UNIQUE,
-    location VARCHAR(255),
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    first_name VARCHAR(50) NOT NULL,
+    last_name VARCHAR(50) NOT NULL,
+    email VARCHAR(50) NOT NULL UNIQUE,
+    phone VARCHAR(20),
+    location VARCHAR(30),
+    password VARCHAR(200) NOT NULL,
+    github VARCHAR(50),
+    linkedin VARCHAR(50)
 );
 
--- ---------- User Content Library ----------
-CREATE TABLE IF NOT EXISTS lib_experiences (
-    id BIGINT AUTO_INCREMENT PRIMARY KEY,
-    user_id BIGINT NOT NULL,
-    company TEXT NOT NULL,
-    title TEXT NOT NULL,
+CREATE TABLE IF NOT EXISTS resumes (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    title VARCHAR(50) NOT NULL,
+    creation_date DATE NOT NULL,
+    last_updated DATE NOT NULL,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS education (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    school VARCHAR(50) NOT NULL,
+    program VARCHAR(50),
+    degree VARCHAR(50),
+    gpa DOUBLE,
+    start_date DATE,
+    end_date DATE,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS projects (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    title VARCHAR(50) NOT NULL,
+    start_date DATE,
+    end_date DATE,
+    description VARCHAR(200),
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS work_experience (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    job_title VARCHAR(50) NOT NULL,
     start_date DATE NOT NULL,
     end_date DATE,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS work_responsibilities (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    work_exp_id INT NOT NULL,
+    responsibility TEXT NOT NULL,
+    FOREIGN KEY (work_exp_id) REFERENCES work_experience(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS company (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(50) NOT NULL UNIQUE,
     location TEXT,
-    summary TEXT,
-    FOREIGN KEY (user_id) REFERENCES users(id)
+    industry VARCHAR(50),
+    website TEXT
 );
 
-CREATE TABLE IF NOT EXISTS lib_exp_bullets (
-    id BIGINT AUTO_INCREMENT PRIMARY KEY,
-    experience_id BIGINT NOT NULL,
-    position INT NOT NULL,
-    text TEXT NOT NULL,
-    FOREIGN KEY (experience_id) REFERENCES lib_experiences(id)
+CREATE TABLE IF NOT EXISTS job_posting (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    title VARCHAR(50) NOT NULL,
+    company_id INT NOT NULL,
+    description TEXT,
+    job_location VARCHAR(50),
+    posted_date DATE,
+    close_date DATE,
+    FOREIGN KEY (company_id) REFERENCES company(id) ON DELETE CASCADE
 );
 
-CREATE TABLE IF NOT EXISTS lib_educations (
-    id BIGINT AUTO_INCREMENT PRIMARY KEY,
-    user_id BIGINT NOT NULL,
-    school TEXT NOT NULL,
-    degree TEXT,
-    program TEXT,
-    start_date DATE,
-    end_date DATE,
-    gpa DECIMAL(3,2),
-    location TEXT,
-    FOREIGN KEY (user_id) REFERENCES users(id)
+CREATE TABLE IF NOT EXISTS job_requirements (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    job_id INT NOT NULL,
+    requirement VARCHAR(50) NOT NULL,
+    FOREIGN KEY (job_id) REFERENCES job_posting(id) ON DELETE CASCADE
 );
 
-CREATE TABLE IF NOT EXISTS lib_projects (
-    id BIGINT AUTO_INCREMENT PRIMARY KEY,
-    user_id BIGINT NOT NULL,
-    name TEXT NOT NULL,
-    url TEXT,
-    start_date DATE,
-    end_date DATE,
-    summary TEXT,
-    FOREIGN KEY (user_id) REFERENCES users(id)
+CREATE TABLE IF NOT EXISTS skills (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(50) NOT NULL UNIQUE,
+    category VARCHAR(50)
 );
 
-CREATE TABLE IF NOT EXISTS lib_proj_bullets (
-    id BIGINT AUTO_INCREMENT PRIMARY KEY,
-    project_id BIGINT NOT NULL,
-    position INT NOT NULL,
-    text TEXT NOT NULL,
-    FOREIGN KEY (project_id) REFERENCES lib_projects(id)
+CREATE TABLE IF NOT EXISTS user_skill_map (
+    user_id INT NOT NULL,
+    skill_id INT NOT NULL,
+    proficiency INT,
+    PRIMARY KEY (user_id, skill_id),
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (skill_id) REFERENCES skills(id) ON DELETE CASCADE
 );
 
-CREATE TABLE IF NOT EXISTS lib_skills (
-    id BIGINT AUTO_INCREMENT PRIMARY KEY,
-    user_id BIGINT NOT NULL,
-    name TEXT NOT NULL,
-    category TEXT,
-    FOREIGN KEY (user_id) REFERENCES users(id)
-);
+-- ---------- Indexes for Performance ----------
 
-CREATE TABLE IF NOT EXISTS lib_skill_tags (
-    id BIGINT AUTO_INCREMENT PRIMARY KEY,
-    skill_id BIGINT NOT NULL,
-    item_type TEXT NOT NULL,
-    item_id BIGINT NOT NULL,
-    FOREIGN KEY (skill_id) REFERENCES lib_skills(id)
-);
-
--- ---------- Resume Documents ----------
-CREATE TABLE IF NOT EXISTS resumes (
-    id BIGINT AUTO_INCREMENT PRIMARY KEY,
-    user_id BIGINT NOT NULL,
-    title TEXT NOT NULL,
-    template_key TEXT,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    is_primary BOOLEAN DEFAULT FALSE,
-    FOREIGN KEY (user_id) REFERENCES resumes(id)
-);
-
-CREATE TABLE IF NOT EXISTS resume_sections (
-    id BIGINT AUTO_INCREMENT PRIMARY KEY,
-    resume_id BIGINT NOT NULL,
-    type TEXT NOT NULL,
-    title_override TEXT,
-    position INT NOT NULL,
-    FOREIGN KEY (resume_id) REFERENCES resumes(id)
-);
-
-CREATE INDEX idx_resume_sections_order ON resume_sections(resume_id, position);
-
-CREATE TABLE IF NOT EXISTS resume_experiences (
-    id BIGINT AUTO_INCREMENT PRIMARY KEY,
-    resume_id BIGINT NOT NULL,
-    lib_experience_id BIGINT NOT NULL,
-    position INT NOT NULL,
-    FOREIGN KEY (resume_id) REFERENCES resumes(id),
-    FOREIGN KEY (lib_experience_id) REFERENCES lib_experiences(id)
-);
-
-CREATE INDEX idx_resume_experiences_order ON resume_experiences(resume_id, position);
-
-CREATE TABLE IF NOT EXISTS resume_exp_bullet_overrides (
-    id BIGINT AUTO_INCREMENT PRIMARY KEY,
-    resume_experience_id BIGINT NOT NULL,
-    lib_exp_bullet_id BIGINT NOT NULL,
-    position INT NOT NULL,
-    text_override TEXT,
-    FOREIGN KEY (resume_experience_id) REFERENCES resume_experiences(id),
-    FOREIGN KEY (lib_exp_bullet_id) REFERENCES lib_exp_bullets(id)
-);
-
-CREATE TABLE IF NOT EXISTS resume_educations (
-    id BIGINT AUTO_INCREMENT PRIMARY KEY,
-    resume_id BIGINT NOT NULL,
-    lib_education_id BIGINT NOT NULL,
-    position INT NOT NULL,
-    FOREIGN KEY (resume_id) REFERENCES resumes(id),
-    FOREIGN KEY (lib_education_id) REFERENCES lib_educations(id)
-);
-
-CREATE INDEX idx_resume_educations_order ON resume_educations(resume_id, position);
-
-CREATE TABLE IF NOT EXISTS resume_projects (
-    id BIGINT AUTO_INCREMENT PRIMARY KEY,
-    resume_id BIGINT NOT NULL,
-    lib_project_id BIGINT NOT NULL,
-    position INT NOT NULL,
-    FOREIGN KEY (resume_id) REFERENCES resumes(id),
-    FOREIGN KEY (lib_project_id) REFERENCES lib_projects(id)
-);
-
-CREATE INDEX idx_resume_projects_order ON resume_projects(resume_id, position);
-
-CREATE TABLE IF NOT EXISTS resume_proj_bullet_overrides (
-    id BIGINT AUTO_INCREMENT PRIMARY KEY,
-    resume_project_id BIGINT NOT NULL,
-    lib_proj_bullet_id BIGINT NOT NULL,
-    position INT NOT NULL,
-    text_override TEXT,
-    FOREIGN KEY (resume_project_id) REFERENCES resume_projects(id),
-    FOREIGN KEY (lib_proj_bullet_id) REFERENCES lib_proj_bullets(id)
-);
-
-CREATE TABLE IF NOT EXISTS resume_skills (
-    id BIGINT AUTO_INCREMENT PRIMARY KEY,
-    resume_id BIGINT NOT NULL,
-    lib_skill_id BIGINT NOT NULL,
-    position INT NOT NULL,
-    proficiency SMALLINT,
-    FOREIGN KEY (resume_id) REFERENCES resumes(id),
-    FOREIGN KEY (lib_skill_id) REFERENCES lib_skills(id)
-);
-
-CREATE INDEX idx_resume_skills_order ON resume_skills(resume_id, position);
-
-CREATE TABLE IF NOT EXISTS resume_summary (
-    id BIGINT AUTO_INCREMENT PRIMARY KEY,
-    resume_id BIGINT NOT NULL UNIQUE,
-    markdown TEXT,
-    FOREIGN KEY (resume_id) REFERENCES resumes(id)
-);
-
-CREATE TABLE IF NOT EXISTS resume_theme_settings (
-    resume_id BIGINT PRIMARY KEY,
-    settings_json JSON,
-    FOREIGN KEY (resume_id) REFERENCES resumes(id)
-);
+CREATE INDEX idx_resumes_user ON resumes(user_id);
+CREATE INDEX idx_education_user ON education(user_id);
+CREATE INDEX idx_projects_user ON projects(user_id);
+CREATE INDEX idx_work_experience_user ON work_experience(user_id);
+CREATE INDEX idx_work_responsibilities_exp ON work_responsibilities(work_exp_id);
+CREATE INDEX idx_job_posting_company ON job_posting(company_id);
+CREATE INDEX idx_job_requirements_job ON job_requirements(job_id);
+CREATE INDEX idx_user_skill_map_user ON user_skill_map(user_id);
+CREATE INDEX idx_user_skill_map_skill ON user_skill_map(skill_id);

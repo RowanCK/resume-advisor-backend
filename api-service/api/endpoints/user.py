@@ -12,14 +12,14 @@ user_bp = Blueprint('user', __name__, url_prefix='/user')
 # ==========================================
 # Get User Profile
 # ==========================================
-@user_bp.route('/<int:user_id>', methods=['GET'])
+@user_bp.route('', methods=['GET'])
 @handle_errors
 @require_auth
-def get_user_profile(auth_user_id, user_id):
+def get_user_profile(auth_user_id):
     """
     Get user profile by ID
     
-    GET /api/v1/user/{user_id}
+    GET /api/v1/user
     
     Response:
     {
@@ -36,19 +36,16 @@ def get_user_profile(auth_user_id, user_id):
         }
     }
     """
-    # Check if user is accessing their own profile
-    if auth_user_id != user_id:
-        return error_response('Access denied. You can only view your own profile', 403)
     
     mysql = get_db()
     cursor = mysql.connection.cursor()
     
     cursor.execute("""
         SELECT id, first_name, last_name, email, phone, location,
-               linkedin_profile_url, github_profile_url, created_at
+               linkedin, github
         FROM users
         WHERE id = %s
-    """, (user_id,))
+    """, (auth_user_id,))
     
     user = cursor.fetchone()
     cursor.close()

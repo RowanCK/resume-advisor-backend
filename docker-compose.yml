@@ -1,6 +1,20 @@
 version: "3.9"
 
 services:
+  nginx:
+    image: nginx:latest
+    container_name: resume-advisor-nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/conf.d:/etc/nginx/conf.d
+      - ./certs:/etc/ssl
+    depends_on:
+      - api
+    restart: unless-stopped
+    networks:
+      - resume-advisor-network
   mysql:
     image: mysql:8.0
     container_name: mysql-db
