@@ -24,6 +24,8 @@ def get_resume(auth_user_id, resume_id):
     tags:
       - Resumes
     summary: Retrieve a specific resume by its ID
+    security:
+      - Bearer: []
     parameters:
       - name: resume_id
         in: path
@@ -163,6 +165,8 @@ def save_resume(auth_user_id):
     tags:
       - Resumes
     summary: Create a new resume or update an existing one
+    security:
+      - Bearer: []
     parameters:
       - name: body
         in: body
@@ -357,6 +361,8 @@ def delete_resume(auth_user_id, resume_id):
     tags:
       - Resumes
     summary: Delete a specific resume
+    security:
+      - Bearer: []
     parameters:
       - name: resume_id
         in: path

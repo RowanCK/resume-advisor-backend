@@ -22,6 +22,8 @@ def list_job_postings():
     tags:
       - Job Postings
     summary: Retrieve all job postings with optional filtering
+    security:
+      - Bearer: []
     parameters:
       - name: company
         in: query
@@ -132,6 +134,8 @@ def get_job_posting(job_id):
     tags:
       - Job Postings
     summary: Retrieve a specific job posting with full details
+    security:
+      - Bearer: []
     parameters:
       - name: job_id
         in: path
@@ -276,6 +280,8 @@ def create_job_posting(auth_user_id):
     tags:
       - Job Postings
     summary: Create a new job posting (admin/recruiter only)
+    security:
+      - Bearer: []
     parameters:
       - name: body
         in: body
@@ -429,6 +435,8 @@ def update_job_posting(auth_user_id, job_id):
     tags:
       - Job Postings
     summary: Update a job posting (admin/recruiter only)
+    security:
+      - Bearer: []
     parameters:
       - name: job_id
         in: path
@@ -554,6 +562,8 @@ def delete_job_posting(auth_user_id, job_id):
     tags:
       - Job Postings
     summary: Delete a job posting (admin only)
+    security:
+      - Bearer: []
     parameters:
       - name: job_id
         in: path
@@ -616,6 +626,8 @@ def search_job_postings():
     tags:
       - Job Postings
     summary: Search job postings by title, description, or requirements
+    security:
+      - Bearer: []
     parameters:
       - name: q
         in: query

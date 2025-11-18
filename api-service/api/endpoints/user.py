@@ -23,6 +23,8 @@ def get_user_profile(auth_user_id):
     tags:
       - User
     summary: Retrieve the authenticated user's profile
+    security:
+      - Bearer: []
     responses:
       200:
         description: User profile retrieved successfully
@@ -104,6 +106,8 @@ def update_user_profile(auth_user_id):
     tags:
       - User
     summary: Update the authenticated user's profile
+    security:
+      - Bearer: []
     consumes:
       - application/json
     parameters:
@@ -227,6 +231,8 @@ def get_user_resumes(auth_user_id):
     tags:
       - User
     summary: Retrieve all resumes for the authenticated user
+    security:
+      - Bearer: []
     responses:
       200:
         description: User resumes retrieved successfully
@@ -291,6 +297,8 @@ def get_user_cover_letters(auth_user_id):
     tags:
       - User
     summary: Retrieve all cover letters for the authenticated user
+    security:
+      - Bearer: []
     responses:
       200:
         description: User cover letters retrieved successfully
@@ -352,6 +360,8 @@ def get_user_jobs(auth_user_id):
     tags:
       - User
     summary: Retrieve all job postings saved by the authenticated user
+    security:
+      - Bearer: []
     responses:
       200:
         description: User job postings retrieved successfully
@@ -431,6 +441,8 @@ def delete_user(auth_user_id):
     tags:
       - User
     summary: Delete the authenticated user's account along with all resumes, cover letters, and related job postings
+    security:
+      - Bearer: []
     responses:
       200:
         description: Account deleted successfully
