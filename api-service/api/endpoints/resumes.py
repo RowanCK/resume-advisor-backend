@@ -290,15 +290,21 @@ def save_resume(auth_user_id):
     job_id = data['job_id']
     sections = data['sections']
     resume_id = data.get('id')  # Optional for updates
+
+    mysql = get_db()
+    cursor = mysql.connection.cursor()
+
+    cursor.execute("SELECT id FROM job_postings WHERE id = %s", (job_id,))
+    job = cursor.fetchone()
+    if not job:
+        cursor.close()
+        return error_response(f'Invalid job_id: {job_id} does not exist', 400)
     
     # Convert sections to JSON string
     try:
         content_json = json.dumps(sections)
     except (TypeError, ValueError) as e:
         return error_response(f'Invalid sections format: {str(e)}', 400)
-    
-    mysql = get_db()
-    cursor = mysql.connection.cursor()
     
     current_date = datetime.now().strftime('%Y-%m-%d')
     
