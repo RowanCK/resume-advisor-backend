@@ -57,11 +57,11 @@ def create_app(config=None):
         "basePath": "/api/v1",
         "schemes": ["https", "http"],
         "securityDefinitions": {
-            "Bearer": {
+            "bearerAuth": {
                 "type": "apiKey",
                 "name": "Authorization",
                 "in": "header",
-                "description": "JWT Authorization header using the Bearer scheme. Example: 'Bearer {token}'"
+                "description": "Enter: Bearer {your token}"
             }
         }
     }

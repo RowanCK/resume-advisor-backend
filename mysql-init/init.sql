@@ -17,6 +17,25 @@ CREATE TABLE IF NOT EXISTS users (
     linkedin VARCHAR(50)
 );
 
+CREATE TABLE IF NOT EXISTS company (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(50) NOT NULL UNIQUE,
+    location TEXT,
+    industry VARCHAR(50),
+    website TEXT
+);
+
+CREATE TABLE IF NOT EXISTS job_postings (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    title VARCHAR(50) NOT NULL,
+    company_id INT NOT NULL,
+    description TEXT,
+    job_location VARCHAR(50),
+    posted_date DATE,
+    close_date DATE,
+    FOREIGN KEY (company_id) REFERENCES company(id) ON DELETE CASCADE
+);
+
 CREATE TABLE IF NOT EXISTS resumes (
     id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NOT NULL,
@@ -25,12 +44,14 @@ CREATE TABLE IF NOT EXISTS resumes (
     content TEXT NOT NULL,
     creation_date DATE NOT NULL,
     last_updated DATE NOT NULL,
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (job_id) REFERENCES job_postings(id) ON DELETE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS cover_letters (
     id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NOT NULL,
+    job_id INT,
     title VARCHAR(50) NOT NULL,
     content TEXT NOT NULL,
     creation_date DATE NOT NULL,
@@ -74,25 +95,6 @@ CREATE TABLE IF NOT EXISTS work_responsibilities (
     work_exp_id INT NOT NULL,
     responsibility TEXT NOT NULL,
     FOREIGN KEY (work_exp_id) REFERENCES work_experiences(id) ON DELETE CASCADE
-);
-
-CREATE TABLE IF NOT EXISTS company (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    name VARCHAR(50) NOT NULL UNIQUE,
-    location TEXT,
-    industry VARCHAR(50),
-    website TEXT
-);
-
-CREATE TABLE IF NOT EXISTS job_postings (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    title VARCHAR(50) NOT NULL,
-    company_id INT NOT NULL,
-    description TEXT,
-    job_location VARCHAR(50),
-    posted_date DATE,
-    close_date DATE,
-    FOREIGN KEY (company_id) REFERENCES company(id) ON DELETE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS job_requirements (
