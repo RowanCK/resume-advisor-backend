@@ -14,18 +14,73 @@ auth_bp = Blueprint('auth', __name__, url_prefix='/auth')
 def signup():
     """
     Create a new user account
-    POST /api/v1/auth/signup
-    Request JSON:
-    {
-        "first_name": "Yi-Kai",
-        "last_name": "Chen",
-        "email": "yikai.chen@example.com",
-        "password": "123456",
-        "phone": "587-123-4567",
-        "location": "Calgary",
-        "linkedin_profile_url": "https://linkedin.com/in/yikai",
-        "github_profile_url": "https://github.com/yikai"
-    }
+    ---
+    tags:
+      - Authentication
+    summary: Create a new user account
+    description: Register a new user with profile information.
+    consumes:
+      - application/json
+    parameters:
+      - in: body
+        name: body
+        required: true
+        schema:
+          type: object
+          required:
+            - first_name
+            - last_name
+            - email
+            - password
+            - phone
+          properties:
+            first_name:
+              type: string
+              example: Rowan
+            last_name:
+              type: string
+              example: Chen
+            email:
+              type: string
+              example: user@example.com
+            password:
+              type: string
+              example: "123456"
+            phone:
+              type: string
+              example: 587-123-4567
+            location:
+              type: string
+              example: Calgary
+            linkedin_profile_url:
+              type: string
+              example: https://linkedin.com/in/yikai
+            github_profile_url:
+              type: string
+              example: https://github.com/yikai
+    responses:
+      201:
+        description: User created successfully
+        schema:
+          type: object
+          properties:
+            success:
+              type: boolean
+              example: true
+            user_id:
+              type: integer
+              example: 12
+      400:
+        description: Missing fields or email already exists
+        schema:
+          type: object
+          properties:
+            success:
+              type: boolean
+              example: false
+            error:
+              type: string
+              example: Email already registered
     """
     data = request.get_json()
     required_fields = ['first_name', 'last_name', 'email', 'password', 'phone']
@@ -74,18 +129,67 @@ def signup():
 @auth_bp.route('/login', methods=['POST'])
 def login():
     """
-    Authenticate user and return JWT
-    POST /api/v1/auth/login
-    Request JSON:
-    {
-        "email": "user@example.com",
-        "password": "123456"
-    }
-    Response JSON:
-    {
-        "success": true,
-        "token": "<JWT_TOKEN>"
-    }
+    Authenticate user and return JWT token
+    ---
+    tags:
+      - Authentication
+    summary: User login
+    description: Authenticate a user using email and password and return a JWT token.
+    consumes:
+      - application/json
+    parameters:
+      - in: body
+        name: body
+        required: true
+        schema:
+          type: object
+          required:
+            - email
+            - password
+          properties:
+            email:
+              type: string
+              example: user@example.com
+            password:
+              type: string
+              example: "123456"
+    responses:
+      200:
+        description: Successfully authenticated
+        schema:
+          type: object
+          properties:
+            success:
+              type: boolean
+              example: true
+            user_id:
+              type: integer
+              example: 12
+            token:
+              type: string
+              example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+      400:
+        description: Missing email or password
+        schema:
+          type: object
+          properties:
+            success:
+              type: boolean
+              example: false
+            error:
+              type: string
+              example: Email and password are required
+      401:
+        description: Invalid credentials
+        schema:
+          type: object
+          properties:
+            success:
+              type: boolean
+              example: false
+            error:
+              type: string
+              example: Invalid credentials
     """
     data = request.get_json()
     if not data or 'email' not in data or 'password' not in data:

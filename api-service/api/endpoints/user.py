@@ -3,8 +3,9 @@ User Endpoints
 Handles user profile and related resources
 """
 
-from flask import Blueprint, request, jsonify
-from ..auth_utils import require_auth, require_owner, handle_errors
+from flask import Blueprint, request
+from MySQLdb.cursors import DictCursor
+from ..auth_utils import require_auth, handle_errors
 from ..utils import get_db, success_response, error_response, validate_required_fields
 
 user_bp = Blueprint('user', __name__, url_prefix='/user')
@@ -18,23 +19,57 @@ user_bp = Blueprint('user', __name__, url_prefix='/user')
 def get_user_profile(auth_user_id):
     """
     Get user profile by ID
-    
-    GET /api/v1/user
-    
-    Response:
-    {
-        "success": true,
-        "data": {
-            "id": 101,
-            "first_name": "Yi-Kai",
-            "last_name": "Chen",
-            "email": "user@example.com",
-            "phone": "403-xxx-xxxx",
-            "location": "Calgary",
-            "linkedin_profile_url": "",
-            "github_profile_url": ""
-        }
-    }
+    ---
+    tags:
+      - User
+    summary: Retrieve the authenticated user's profile
+    responses:
+      200:
+        description: User profile retrieved successfully
+        schema:
+          type: object
+          properties:
+            success:
+              type: boolean
+              example: true
+            data:
+              type: object
+              properties:
+                id:
+                  type: integer
+                  example: 101
+                first_name:
+                  type: string
+                  example: Yi-Kai
+                last_name:
+                  type: string
+                  example: Chen
+                email:
+                  type: string
+                  example: user@example.com
+                phone:
+                  type: string
+                  example: 403-xxx-xxxx
+                location:
+                  type: string
+                  example: Calgary
+                linkedin_profile_url:
+                  type: string
+                  example: ""
+                github_profile_url:
+                  type: string
+                  example: ""
+      404:
+        description: User not found
+        schema:
+          type: object
+          properties:
+            success:
+              type: boolean
+              example: false
+            error:
+              type: string
+              example: User not found
     """
     
     mysql = get_db()
@@ -59,35 +94,79 @@ def get_user_profile(auth_user_id):
 # ==========================================
 # Update User Profile
 # ==========================================
-@user_bp.route('/<int:user_id>', methods=['PUT'])
+@user_bp.route('', methods=['PUT'])
 @handle_errors
 @require_auth
-def update_user_profile(auth_user_id, user_id):
+def update_user_profile(auth_user_id):
     """
     Update user profile
-    
-    PUT /api/v1/user/{user_id}
-    
-    Request Body:
-    {
-        "first_name": "Yi-Kai",
-        "last_name": "Chen",
-        "phone": "403-xxx-xxxx",
-        "location": "Calgary",
-        "linkedin_profile_url": "",
-        "github_profile_url": ""
-    }
-    
-    Response:
-    {
-        "success": true,
-        "message": "Profile updated successfully"
-    }
+    ---
+    tags:
+      - User
+    summary: Update the authenticated user's profile
+    consumes:
+      - application/json
+    parameters:
+      - in: body
+        name: body
+        required: true
+        schema:
+          type: object
+          properties:
+            first_name:
+              type: string
+              example: Yi-Kai
+            last_name:
+              type: string
+              example: Chen
+            phone:
+              type: string
+              example: 403-xxx-xxxx
+            location:
+              type: string
+              example: Calgary
+            linkedin:
+              type: string
+              example: ""
+            github:
+              type: string
+              example: ""
+    responses:
+      200:
+        description: Profile updated successfully
+        schema:
+          type: object
+          properties:
+            success:
+              type: boolean
+              example: true
+            message:
+              type: string
+              example: Profile updated successfully
+      400:
+        description: Invalid request or no fields to update
+        schema:
+          type: object
+          properties:
+            success:
+              type: boolean
+              example: false
+            error:
+              type: string
+              example: No valid fields to update
+      404:
+        description: User not found
+        schema:
+          type: object
+          properties:
+            success:
+              type: boolean
+              example: false
+            error:
+              type: string
+              example: User not found
     """
-    # Check if user is updating their own profile
-    if auth_user_id != user_id:
-        return error_response('Access denied. You can only update your own profile', 403)
-    
+
     data = request.get_json()
     
     if not data:
@@ -96,7 +175,7 @@ def update_user_profile(auth_user_id, user_id):
     # Build dynamic UPDATE query
     allowed_fields = [
         'first_name', 'last_name', 'phone', 'location',
-        'linkedin_profile_url', 'github_profile_url'
+        'linkedin', 'github'
     ]
     
     update_fields = []
@@ -111,7 +190,7 @@ def update_user_profile(auth_user_id, user_id):
         return error_response('No valid fields to update', 400)
     
     # Add user_id to values
-    update_values.append(user_id)
+    update_values.append(auth_user_id)
     
     mysql = get_db()
     cursor = mysql.connection.cursor()
@@ -138,48 +217,57 @@ def update_user_profile(auth_user_id, user_id):
 # ==========================================
 # Get User's Resumes
 # ==========================================
-@user_bp.route('/<int:user_id>/resumes', methods=['GET'])
+@user_bp.route('/resumes', methods=['GET'])
 @handle_errors
 @require_auth
-def get_user_resumes(auth_user_id, user_id):
+def get_user_resumes(auth_user_id):
     """
     Get all resumes for a user
-
-    GET /api/v1/user/{user_id}/resumes
-
-    Response:
-    {
-        "success": true,
-        "data": [
-            {
-                "id": 501,
-                "title": "Software Engineer Resume",
-                "job_id": 501,
-                "last_update": "2025-10-26"
-            },
-            {
-                "id": 502,
-                "title": "Data Engineer Resume",
-                "job_id": 502,
-                "last_update": "2025-09-30"
-            }
-        ],
-        "count": 2
-    }
+    ---
+    tags:
+      - User
+    summary: Retrieve all resumes for the authenticated user
+    responses:
+      200:
+        description: User resumes retrieved successfully
+        schema:
+          type: object
+          properties:
+            success:
+              type: boolean
+              example: true
+            data:
+              type: array
+              items:
+                type: object
+                properties:
+                  id:
+                    type: integer
+                    example: 501
+                  title:
+                    type: string
+                    example: Software Engineer Resume
+                  job_id:
+                    type: integer
+                    example: 501
+                  last_updated:
+                    type: string
+                    format: date
+                    example: 2025-10-26
+            count:
+              type: integer
+              example: 2
     """
-    # Check if user is accessing their own resumes
-    if auth_user_id != user_id:
-        return error_response('Access denied. You can only view your own resumes', 403)
-    
+
     mysql = get_db()
     cursor = mysql.connection.cursor()
     
     cursor.execute("""
-        SELECT id, title, job_id, last_update
+        SELECT id, title, job_id, last_updated
         FROM resumes
         WHERE user_id = %s
-        ORDER BY last_update DESC
-    """, (user_id,))
+        ORDER BY last_updated DESC
+    """, (auth_user_id,))
     
     resumes = cursor.fetchall()
     cursor.close()
@@ -193,46 +281,54 @@ def get_user_resumes(auth_user_id, user_id):
 # ==========================================
 # Get User's Cover Letters
 # ==========================================
-@user_bp.route('/<int:user_id>/coverletters', methods=['GET'])
+@user_bp.route('/coverletters', methods=['GET'])
 @handle_errors
 @require_auth
-def get_user_cover_letters(auth_user_id, user_id):
+def get_user_cover_letters(auth_user_id):
     """
     Get all cover letters for a user
-
-    GET /api/v1/user/{user_id}/coverletters
-
-    Response:
-    {
-        "success": true,
-        "data": [
-            {
-                "id": 301,
-                "title": "Amazon Cover Letter",
-                "last_update": "2025-10-26"
-            },
-            {
-                "id": 302,
-                "title": "Google Cover Letter",
-                "last_update": "2025-09-20"
-            }
-        ],
-        "count": 2
-    }
+    ---
+    tags:
+      - User
+    summary: Retrieve all cover letters for the authenticated user
+    responses:
+      200:
+        description: User cover letters retrieved successfully
+        schema:
+          type: object
+          properties:
+            success:
+              type: boolean
+              example: true
+            data:
+              type: array
+              items:
+                type: object
+                properties:
+                  id:
+                    type: integer
+                    example: 301
+                  title:
+                    type: string
+                    example: Amazon Cover Letter
+                  last_updated:
+                    type: string
+                    format: date
+                    example: 2025-10-26
+            count:
+              type: integer
+              example: 2
     """
-    # Check if user is accessing their own cover letters
-    if auth_user_id != user_id:
-        return error_response('Access denied. You can only view your own cover letters', 403)
-    
+
     mysql = get_db()
     cursor = mysql.connection.cursor()
     
     cursor.execute("""
-        SELECT id, title, last_update
+        SELECT id, title, last_updated
         FROM cover_letters
         WHERE user_id = %s
-        ORDER BY last_update DESC
-    """, (user_id,))
+        ORDER BY last_updated DESC
+    """, (auth_user_id,))
     
     cover_letters = cursor.fetchall()
     cursor.close()
@@ -246,44 +342,72 @@ def get_user_cover_letters(auth_user_id, user_id):
 # ==========================================
 # Get User's Job Postings
 # ==========================================
-@user_bp.route('/<int:user_id>/jobs', methods=['GET'])
+@user_bp.route('/jobs', methods=['GET'])
 @handle_errors
 @require_auth
-def get_user_jobs(auth_user_id, user_id):
+def get_user_jobs(auth_user_id):
     """
-    Get all saved job postings for a user
-
-    GET /api/v1/user/{user_id}/jobs
-
-    Response:
-    {
-        "success": true,
-        "data": [
-            {
-                "id": 201,
-                "title": "Backend Developer",
-                "company": "Google",
-                "location": "Toronto",
-                "posted_date": "2025-10-15",
-                "close_date": "2025-11-15"
-            }
-        ],
-        "count": 1
-    }
+    Get all saved job postings for a user based on resumes
+    ---
+    tags:
+      - User
+    summary: Retrieve all job postings saved by the authenticated user
+    responses:
+      200:
+        description: User job postings retrieved successfully
+        schema:
+          type: object
+          properties:
+            success:
+              type: boolean
+              example: true
+            data:
+              type: array
+              items:
+                type: object
+                properties:
+                  id:
+                    type: integer
+                    example: 201
+                  title:
+                    type: string
+                    example: Backend Developer
+                  company:
+                    type: string
+                    example: Google
+                  location:
+                    type: string
+                    example: Toronto
+                  posted_date:
+                    type: string
+                    format: date
+                    example: 2025-10-15
+                  close_date:
+                    type: string
+                    format: date
+                    example: 2025-11-15
+            count:
+              type: integer
+              example: 1
     """
-    # Check if user is accessing their own jobs
-    if auth_user_id != user_id:
-        return error_response('Access denied. You can only view your own job postings', 403)
-    
+
     mysql = get_db()
-    cursor = mysql.connection.cursor()
+    cursor = mysql.connection.cursor(DictCursor)
     
     cursor.execute("""
-        SELECT id, title, company, location, posted_date, close_date, created_at
-        FROM job_postings
-        WHERE user_id = %s
-        ORDER BY created_at DESC
-    """, (user_id,))
+        SELECT
+            jp.id,
+            jp.title,
+            c.name AS company,
+            jp.job_location AS location,
+            jp.posted_date,
+            jp.close_date
+        FROM resumes r
+        JOIN job_postings jp ON r.job_id = jp.id
+        JOIN company c ON jp.company_id = c.id
+        WHERE r.user_id = %s
+        ORDER BY r.last_updated DESC
+    """, (auth_user_id,))
     
     jobs = cursor.fetchall()
     cursor.close()
@@ -297,32 +421,46 @@ def get_user_jobs(auth_user_id, user_id):
 # ==========================================
 # Delete User Account
 # ==========================================
-@user_bp.route('/<int:user_id>', methods=['DELETE'])
+@user_bp.route('', methods=['DELETE'])
 @handle_errors
 @require_auth
-def delete_user(auth_user_id, user_id):
+def delete_user(auth_user_id):
     """
     Delete user account and all related data
-
-    DELETE /api/v1/user/{user_id}
-
-    Response:
-    {
-        "success": true,
-        "message": "Account deleted successfully"
-    }
-    
-    Note: This will cascade delete all user's resumes, cover letters, and job postings
+    ---
+    tags:
+      - User
+    summary: Delete the authenticated user's account along with all resumes, cover letters, and related job postings
+    responses:
+      200:
+        description: Account deleted successfully
+        schema:
+          type: object
+          properties:
+            success:
+              type: boolean
+              example: true
+            message:
+              type: string
+              example: Account deleted successfully
+      404:
+        description: User not found
+        schema:
+          type: object
+          properties:
+            success:
+              type: boolean
+              example: false
+            error:
+              type: string
+              example: User not found
     """
-    # Check if user is deleting their own account
-    if auth_user_id != user_id:
-        return error_response('Access denied. You can only delete your own account', 403)
-    
+
     mysql = get_db()
     cursor = mysql.connection.cursor()
     
     # Delete user (cascade will handle related records)
-    cursor.execute("DELETE FROM users WHERE id = %s", (user_id,))
+    cursor.execute("DELETE FROM users WHERE id = %s", (auth_user_id,))
     mysql.connection.commit()
     affected_rows = cursor.rowcount
     cursor.close()

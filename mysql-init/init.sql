@@ -20,7 +20,19 @@ CREATE TABLE IF NOT EXISTS users (
 CREATE TABLE IF NOT EXISTS resumes (
     id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NOT NULL,
+    job_id INT NOT NULL,
     title VARCHAR(50) NOT NULL,
+    content TEXT NOT NULL,
+    creation_date DATE NOT NULL,
+    last_updated DATE NOT NULL,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS cover_letters (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    title VARCHAR(50) NOT NULL,
+    content TEXT NOT NULL,
     creation_date DATE NOT NULL,
     last_updated DATE NOT NULL,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
@@ -48,7 +60,7 @@ CREATE TABLE IF NOT EXISTS projects (
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
-CREATE TABLE IF NOT EXISTS work_experience (
+CREATE TABLE IF NOT EXISTS work_experiences (
     id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NOT NULL,
     job_title VARCHAR(50) NOT NULL,
@@ -61,7 +73,7 @@ CREATE TABLE IF NOT EXISTS work_responsibilities (
     id INT AUTO_INCREMENT PRIMARY KEY,
     work_exp_id INT NOT NULL,
     responsibility TEXT NOT NULL,
-    FOREIGN KEY (work_exp_id) REFERENCES work_experience(id) ON DELETE CASCADE
+    FOREIGN KEY (work_exp_id) REFERENCES work_experiences(id) ON DELETE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS company (
@@ -72,7 +84,7 @@ CREATE TABLE IF NOT EXISTS company (
     website TEXT
 );
 
-CREATE TABLE IF NOT EXISTS job_posting (
+CREATE TABLE IF NOT EXISTS job_postings (
     id INT AUTO_INCREMENT PRIMARY KEY,
     title VARCHAR(50) NOT NULL,
     company_id INT NOT NULL,
@@ -87,7 +99,7 @@ CREATE TABLE IF NOT EXISTS job_requirements (
     id INT AUTO_INCREMENT PRIMARY KEY,
     job_id INT NOT NULL,
     requirement VARCHAR(50) NOT NULL,
-    FOREIGN KEY (job_id) REFERENCES job_posting(id) ON DELETE CASCADE
+    FOREIGN KEY (job_id) REFERENCES job_postings(id) ON DELETE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS skills (
@@ -110,9 +122,9 @@ CREATE TABLE IF NOT EXISTS user_skill_map (
 CREATE INDEX idx_resumes_user ON resumes(user_id);
 CREATE INDEX idx_education_user ON education(user_id);
 CREATE INDEX idx_projects_user ON projects(user_id);
-CREATE INDEX idx_work_experience_user ON work_experience(user_id);
+CREATE INDEX idx_work_experiences_user ON work_experiences(user_id);
 CREATE INDEX idx_work_responsibilities_exp ON work_responsibilities(work_exp_id);
-CREATE INDEX idx_job_posting_company ON job_posting(company_id);
+CREATE INDEX idx_job_postings_company ON job_postings(company_id);
 CREATE INDEX idx_job_requirements_job ON job_requirements(job_id);
 CREATE INDEX idx_user_skill_map_user ON user_skill_map(user_id);
 CREATE INDEX idx_user_skill_map_skill ON user_skill_map(skill_id);
