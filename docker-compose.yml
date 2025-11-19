@@ -15,6 +15,7 @@ services:
     restart: unless-stopped
     networks:
       - resume-advisor-network
+
   mysql:
     image: mysql:8.0
     container_name: mysql-db
@@ -30,7 +31,7 @@ services:
       # - mysql_data:/var/lib/mysql # For production
       - ./mysql-init:/docker-entrypoint-initdb.d
     networks:
-      - backend_network
+      - resume-advisor-network
 
   api:
     build: ./api-service
@@ -48,12 +49,12 @@ services:
     env_file:
       - ./.env
     networks:
-      - backend_network
+      - resume-advisor-network
 
 volumes:
   mysql_data:
 
 
 networks:
-  backend_network:
+  resume-advisor-network:
     driver: bridge
