@@ -221,4 +221,4 @@ def login():
     }
     token = jwt.encode(payload, secret_key, algorithm='HS256')
     
-    return success_response({'user_id': user_id, 'token': token})
+    return success_response({'user_id': user_id, 'user_email': email, 'token': token})
