@@ -23,6 +23,10 @@ def require_auth(f):
         auth_header = request.headers.get('Authorization')
         
         if not auth_header:
+            # Log for debugging
+            import sys
+            print(f"[AUTH DEBUG] No Authorization header in request to {request.path}", file=sys.stderr, flush=True)
+            print(f"[AUTH DEBUG] Available headers: {dict(request.headers)}", file=sys.stderr, flush=True)
             return jsonify({
                 'success': False,
                 'error': 'Authorization header is missing'
@@ -32,11 +36,13 @@ def require_auth(f):
         try:
             token_type, token = auth_header.split(' ')
             if token_type.lower() != 'bearer':
+                print(f"[AUTH DEBUG] Invalid token type: {token_type}")
                 return jsonify({
                     'success': False,
                     'error': 'Invalid token type. Use Bearer token'
                 }), 401
         except ValueError:
+            print(f"[AUTH DEBUG] Invalid Authorization header format: {auth_header}")
             return jsonify({
                 'success': False,
                 'error': 'Invalid Authorization header format. Use: Bearer <token>'
@@ -52,13 +58,16 @@ def require_auth(f):
             
             # Add user_id to kwargs for the route function
             kwargs['auth_user_id'] = payload['user_id']
+            print(f"[AUTH DEBUG] Token validated successfully for user_id: {payload['user_id']}")
             
         except jwt.ExpiredSignatureError:
+            print(f"[AUTH DEBUG] Token expired")
             return jsonify({
                 'success': False,
                 'error': 'Token has expired'
             }), 401
-        except jwt.InvalidTokenError:
+        except jwt.InvalidTokenError as e:
+            print(f"[AUTH DEBUG] Invalid token: {str(e)}")
             return jsonify({
                 'success': False,
                 'error': 'Invalid token'
