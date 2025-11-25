@@ -61,9 +61,10 @@ def create_app(config=None):
                 "type": "apiKey",
                 "name": "Authorization",
                 "in": "header",
-                "description": "JWT Authorization header using the Bearer scheme. Example: 'Bearer {token}'"
+                "description": "Enter your JWT token in the format: Bearer YOUR_TOKEN_HERE"
             }
-        }
+        },
+        "security": []
     }
     
     Swagger(app, config=swagger_config, template=swagger_template)

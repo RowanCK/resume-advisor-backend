@@ -214,7 +214,7 @@ def login():
         return error_response('Invalid credentials', 401)
     
     # Create JWT token
-    secret_key = current_app.config.get('SECRET_KEY', 'mysecret')
+    secret_key = current_app.config.get('JWT_SECRET_KEY')
     payload = {
         'user_id': user_id,
         'exp': datetime.now(timezone.utc) + timedelta(hours=1)
