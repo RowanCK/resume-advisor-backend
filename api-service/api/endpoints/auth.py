@@ -217,7 +217,7 @@ def login():
     secret_key = current_app.config.get('SECRET_KEY', 'mysecret')
     payload = {
         'user_id': user_id,
-        'exp': datetime.now(timezone.utc) + timedelta(hours=1)
+        'exp': datetime.now(timezone.utc) + timedelta(hours=3)
     }
     token = jwt.encode(payload, secret_key, algorithm='HS256')
     
