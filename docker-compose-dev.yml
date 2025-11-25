@@ -47,6 +47,7 @@ services:
       - resume-advisor-network
     volumes:
       - ./api-service:/app
+      - "./reports:/reports"
 
 volumes:
   mysql_data:

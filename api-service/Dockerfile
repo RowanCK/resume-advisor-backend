@@ -14,10 +14,13 @@ RUN apt-get update && \
 COPY requirements.txt /app/
 
 RUN pip install --upgrade pip && \
-    pip install --no-cache-dir -r requirements.txt
+    pip install --no-cache-dir -r requirements.txt \
+    && pip install pytest pytest-html pytest-cov
+
+RUN mkdir -p /reports
 
 COPY . /app/
 
 EXPOSE 8080
 
-CMD ["python", "app.py"]
+CMD ["/app/start.sh"]
