@@ -195,7 +195,12 @@ def get_job_posting(job_id):
                   type: array
                   items:
                     type: string
-                  example: ["5+ years experience", "Python expertise", "Bachelor's degree"]
+                  example: ["Python", "C++", "AWS", "REST API", "Docker"]
+                selected_requirements:
+                  type: array
+                  items:
+                    type: string
+                  example: ["Python", "AWS", "Docker"]
       404:
         description: Job posting not found
         schema:
@@ -243,8 +248,20 @@ def get_job_posting(job_id):
         WHERE job_id = %s
     """, (job_id,))
     
-    requirements = [row['requirement'] for row in cursor.fetchall()]
+    all_requirements = cursor.fetchall()
     cursor.close()
+    
+    # Separate regular requirements and selected requirements
+    requirements = []
+    selected_requirements = []
+    
+    for row in all_requirements:
+        req = row['requirement']
+        if req.startswith('[SELECTED]'):
+            # Remove the [SELECTED] prefix and add to selected_requirements
+            selected_requirements.append(req.replace('[SELECTED]', '', 1))
+        else:
+            requirements.append(req)
     
     # Build response
     response_data = {
@@ -261,25 +278,26 @@ def get_job_posting(job_id):
             'industry': job['company_industry'],
             'website': job['company_website']
         },
-        'requirements': requirements
+        'requirements': requirements,
+        'selected_requirements': selected_requirements
     }
     
     return success_response({'data': response_data})
 
 
 # ==========================================
-# Create Job Posting
+# Create or Update Job Posting
 # ==========================================
 @job_postings_bp.route('', methods=['POST'])
 @handle_errors
 @require_auth
-def create_job_posting(auth_user_id):
+def create_or_update_job_posting(auth_user_id):
     """
-    Create a new job posting
+    Create a new job posting or update an existing one
     ---
     tags:
       - Job Postings
-    summary: Create a new job posting (admin/recruiter only)
+    summary: Create or update a job posting (checks job_id in request body)
     security:
       - Bearer: []
     parameters:
@@ -289,11 +307,11 @@ def create_job_posting(auth_user_id):
         description: Job posting data
         schema:
           type: object
-          required:
-            - title
-            - company_name
-            - job_location
           properties:
+            job_id:
+              type: integer
+              description: Job posting ID (if provided, will update; otherwise creates new)
+              example: 201
             title:
               type: string
               example: Senior Software Engineer
@@ -327,10 +345,27 @@ def create_job_posting(auth_user_id):
               type: array
               items:
                 type: string
-              example: ["5+ years experience", "Python expertise", "Bachelor's degree"]
-    security:
-      - Bearer: []
+              example: ["Python", "C++", "AWS", "REST API", "Docker"]
+            selected_requirements:
+              type: array
+              items:
+                type: string
+              example: ["Python", "AWS", "Docker"]
     responses:
+      200:
+        description: Job posting updated successfully
+        schema:
+          type: object
+          properties:
+            success:
+              type: boolean
+              example: true
+            job_id:
+              type: integer
+              example: 201
+            message:
+              type: string
+              example: Job posting updated successfully
       201:
         description: Job posting created successfully
         schema:
@@ -356,135 +391,8 @@ def create_job_posting(auth_user_id):
             error:
               type: string
               example: Missing required field
-    """
-    data = request.get_json()
-    
-    # Validate required fields
-    try:
-        validate_required_fields(data, ['title', 'company_name', 'job_location'])
-    except ValueError as e:
-        return error_response(str(e), 400)
-    
-    mysql = get_db()
-    cursor = mysql.connection.cursor()
-    
-    # Check if company exists, if not create it
-    cursor.execute("SELECT id FROM company WHERE name = %s", (data['company_name'],))
-    company = cursor.fetchone()
-    
-    if company:
-        company_id = company['id']
-    else:
-        # Create new company
-        cursor.execute("""
-            INSERT INTO company (name, location, industry, website)
-            VALUES (%s, %s, %s, %s)
-        """, (
-            data['company_name'],
-            data.get('company_location'),
-            data.get('company_industry'),
-            data.get('company_website')
-        ))
-        company_id = cursor.lastrowid
-    
-    # Create job posting
-    posted_date = data.get('posted_date', datetime.now().strftime('%Y-%m-%d'))
-    close_date = data.get('close_date')
-    
-    cursor.execute("""
-        INSERT INTO job_postings (title, company_id, description, job_location, posted_date, close_date)
-        VALUES (%s, %s, %s, %s, %s, %s)
-    """, (
-        data['title'],
-        company_id,
-        data.get('description'),
-        data['job_location'],
-        posted_date,
-        close_date
-    ))
-    
-    job_id = cursor.lastrowid
-    
-    # Add requirements if provided
-    requirements = data.get('requirements', [])
-    for req in requirements:
-        cursor.execute("""
-            INSERT INTO job_requirements (job_id, requirement)
-            VALUES (%s, %s)
-        """, (job_id, req))
-    
-    mysql.connection.commit()
-    cursor.close()
-    
-    return success_response({
-        'job_id': job_id,
-        'message': 'Job posting created successfully'
-    }, 201)
-
-
-# ==========================================
-# Update Job Posting
-# ==========================================
-@job_postings_bp.route('/<int:job_id>', methods=['PUT'])
-@handle_errors
-@require_auth
-def update_job_posting(auth_user_id, job_id):
-    """
-    Update an existing job posting
-    ---
-    tags:
-      - Job Postings
-    summary: Update a job posting (admin/recruiter only)
-    security:
-      - Bearer: []
-    parameters:
-      - name: job_id
-        in: path
-        type: integer
-        required: true
-        description: The ID of the job posting to update
-        example: 201
-      - name: body
-        in: body
-        required: true
-        description: Updated job posting data
-        schema:
-          type: object
-          properties:
-            title:
-              type: string
-              example: Senior Software Engineer
-            description:
-              type: string
-              example: Updated job description
-            job_location:
-              type: string
-              example: Remote
-            close_date:
-              type: string
-              format: date
-              example: "2025-12-15"
-            requirements:
-              type: array
-              items:
-                type: string
-              example: ["5+ years experience", "Python expertise"]
-    security:
-      - Bearer: []
-    responses:
-      200:
-        description: Job posting updated successfully
-        schema:
-          type: object
-          properties:
-            success:
-              type: boolean
-              example: true
-            message:
-              type: string
-              example: Job posting updated successfully
       404:
-        description: Job posting not found
+        description: Job posting not found (when job_id provided but doesn't exist)
         schema:
           type: object
           properties:
@@ -497,56 +405,170 @@ def update_job_posting(auth_user_id, job_id):
     """
     data = request.get_json()
     
+    # Check if job_id is provided to determine create or update
+    job_id = data.get('job_id')
+    is_update = job_id is not None
+    
     mysql = get_db()
     cursor = mysql.connection.cursor()
     
-    # Check if job exists
-    cursor.execute("SELECT id FROM job_postings WHERE id = %s", (job_id,))
-    if not cursor.fetchone():
-        cursor.close()
-        return error_response('Job posting not found', 404)
+    # For UPDATE: Check if job exists
+    if is_update:
+        cursor.execute("SELECT id FROM job_postings WHERE id = %s", (job_id,))
+        if not cursor.fetchone():
+            cursor.close()
+            return error_response('Job posting not found', 404)
     
-    # Build update query dynamically
-    update_fields = []
-    params = []
+    # For CREATE: Validate required fields
+    if not is_update:
+        try:
+            validate_required_fields(data, ['title', 'company_name', 'job_location'])
+        except ValueError as e:
+            cursor.close()
+            return error_response(str(e), 400)
     
-    if 'title' in data:
-        update_fields.append("title = %s")
-        params.append(data['title'])
+    # Handle company
+    company_id = None
+    if 'company_name' in data or not is_update:
+        company_name = data.get('company_name')
+        if company_name:
+            cursor.execute("SELECT id FROM company WHERE name = %s", (company_name,))
+            company = cursor.fetchone()
+            
+            if company:
+                company_id = company['id']
+                # Update company info if provided
+                update_company_fields = []
+                company_params = []
+                
+                if 'company_location' in data:
+                    update_company_fields.append("location = %s")
+                    company_params.append(data['company_location'])
+                if 'company_industry' in data:
+                    update_company_fields.append("industry = %s")
+                    company_params.append(data['company_industry'])
+                if 'company_website' in data:
+                    update_company_fields.append("website = %s")
+                    company_params.append(data['company_website'])
+                
+                if update_company_fields:
+                    company_params.append(company_id)
+                    cursor.execute(
+                        f"UPDATE company SET {', '.join(update_company_fields)} WHERE id = %s",
+                        tuple(company_params)
+                    )
+            else:
+                # Create new company
+                cursor.execute("""
+                    INSERT INTO company (name, location, industry, website)
+                    VALUES (%s, %s, %s, %s)
+                """, (
+                    company_name,
+                    data.get('company_location'),
+                    data.get('company_industry'),
+                    data.get('company_website')
+                ))
+                company_id = cursor.lastrowid
     
-    if 'description' in data:
-        update_fields.append("description = %s")
-        params.append(data['description'])
-    
-    if 'job_location' in data:
-        update_fields.append("job_location = %s")
-        params.append(data['job_location'])
-    
-    if 'close_date' in data:
-        update_fields.append("close_date = %s")
-        params.append(data['close_date'])
-    
-    if update_fields:
-        query = f"UPDATE job_postings SET {', '.join(update_fields)} WHERE id = %s"
-        params.append(job_id)
-        cursor.execute(query, tuple(params))
-    
-    # Update requirements if provided
-    if 'requirements' in data:
-        # Delete existing requirements
-        cursor.execute("DELETE FROM job_requirements WHERE job_id = %s", (job_id,))
+    if is_update:
+        # UPDATE existing job posting
+        update_fields = []
+        params = []
         
-        # Insert new requirements
-        for req in data['requirements']:
+        if 'title' in data:
+            update_fields.append("title = %s")
+            params.append(data['title'])
+        
+        if 'description' in data:
+            update_fields.append("description = %s")
+            params.append(data['description'])
+        
+        if 'job_location' in data:
+            update_fields.append("job_location = %s")
+            params.append(data['job_location'])
+        
+        if 'close_date' in data:
+            update_fields.append("close_date = %s")
+            params.append(data['close_date'])
+
+        if company_id:
+            update_fields.append("company_id = %s")
+            params.append(company_id)
+        
+        if update_fields:
+            query = f"UPDATE job_postings SET {', '.join(update_fields)} WHERE id = %s"
+            params.append(job_id)
+            cursor.execute(query, tuple(params))
+        
+        # Update requirements if provided
+        if 'requirements' in data:
+            cursor.execute("DELETE FROM job_requirements WHERE job_id = %s AND requirement NOT LIKE '[SELECTED]%%'", (job_id,))
+            for req in data['requirements']:
+                cursor.execute("""
+                    INSERT INTO job_requirements (job_id, requirement)
+                    VALUES (%s, %s)
+                """, (job_id, req))
+        
+        # Update selected_requirements if provided
+        if 'selected_requirements' in data:
+            cursor.execute("DELETE FROM job_requirements WHERE job_id = %s AND requirement LIKE '[SELECTED]%%'", (job_id,))
+            for req in data['selected_requirements']:
+                cursor.execute("""
+                    INSERT INTO job_requirements (job_id, requirement)
+                    VALUES (%s, %s)
+                """, (job_id, f"[SELECTED]{req}"))
+        
+        mysql.connection.commit()
+        cursor.close()
+        
+        return success_response({
+            'job_id': job_id,
+            'message': 'Job posting updated successfully'
+        })
+    
+    else:
+        # CREATE new job posting
+        posted_date = data.get('posted_date', datetime.now().strftime('%Y-%m-%d'))
+        close_date = data.get('close_date')
+        
+        cursor.execute("""
+            INSERT INTO job_postings 
+            (title, company_id, description, job_location, posted_date, close_date)
+            VALUES (%s, %s, %s, %s, %s, %s)
+        """, (
+            data['title'],
+            company_id,
+            data.get('description'),
+            data['job_location'],
+            posted_date,
+            close_date
+        ))
+        
+        job_id = cursor.lastrowid
+        
+        # Add requirements if provided
+        requirements = data.get('requirements', [])
+        for req in requirements:
             cursor.execute("""
                 INSERT INTO job_requirements (job_id, requirement)
                 VALUES (%s, %s)
             """, (job_id, req))
-    
-    mysql.connection.commit()
-    cursor.close()
-    
-    return success_response({'message': 'Job posting updated successfully'})
+        
+        # Add selected_requirements if provided
+        selected_requirements = data.get('selected_requirements', [])
+        for req in selected_requirements:
+            cursor.execute("""
+                INSERT INTO job_requirements (job_id, requirement)
+                VALUES (%s, %s)
+            """, (job_id, f"[SELECTED]{req}"))
+        
+        mysql.connection.commit()
+        cursor.close()
+        
+        return success_response({
+            'job_id': job_id,
+            'message': 'Job posting created successfully'
+        }, 201)
 
 
 # ==========================================
