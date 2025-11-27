@@ -23,7 +23,18 @@ def create_app(config=None):
     
     # Initialize extensions
     mysql = MySQL(app)
-    CORS(app)  # Enable CORS for frontend
+    
+    # Enable CORS for all routes and origins
+    # In production, replace '*' with your specific frontend domain
+    CORS(app, resources={
+        r"/api/*": {
+            "origins": "*",  # 允許所有來源，生產環境建議改為具體域名
+            "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+            "allow_headers": ["Content-Type", "Authorization"],
+            "expose_headers": ["Content-Type", "Authorization"],
+            "supports_credentials": True
+        }
+    })
     
     # Initialize Swagger
     swagger_config = {
@@ -53,7 +64,6 @@ def create_app(config=None):
                 "email": "support@resumeadvisor.com"
             }
         },
-        "host": "localhost",
         "basePath": "/api/v1",
         "schemes": ["https", "http"],
         "securityDefinitions": {
@@ -127,6 +137,6 @@ if __name__ == '__main__':
     
     print(f"Starting Resume Advisor API on {host}:{port}")
     print(f"Debug mode: {debug}")
-    print(f"Swagger UI available at: http://{host}:{port}/api/docs")
+    print(f"Swagger UI available at: http://{host}:{port}/docs")
     
     app.run(host=host, port=port, debug=debug)
