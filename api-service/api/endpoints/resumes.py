@@ -348,6 +348,8 @@ def save_resume(auth_user_id):
             SET title = %s, job_id = %s, content = %s, last_updated = %s
             WHERE id = %s
         """, (title, job_id, content_json, current_date, resume_id))
+
+        _sync_resume_data_to_tables(cursor, auth_user_id, sections)
         
         mysql.connection.commit()
         cursor.close()
@@ -363,6 +365,8 @@ def save_resume(auth_user_id):
             INSERT INTO resumes (user_id, job_id, title, content, creation_date, last_updated)
             VALUES (%s, %s, %s, %s, %s, %s)
         """, (auth_user_id, job_id, title, content_json, current_date, current_date))
+
+        _sync_resume_data_to_tables(cursor, auth_user_id, sections)
         
         mysql.connection.commit()
         new_resume_id = cursor.lastrowid
@@ -454,3 +458,202 @@ def delete_resume(auth_user_id, resume_id):
     cursor.close()
     
     return success_response({'message': 'Resume deleted successfully'})
+
+
+# ==========================================
+# Helper Function: Sync Resume Data to Tables
+# ==========================================
+def _sync_resume_data_to_tables(cursor, user_id, sections):
+    """
+    Sync resume sections data to individual database tables for analysis.
+    This maintains the existing content JSON storage while also populating
+    normalized tables.
+    """
+    
+    # ==========================================
+    # Sync Education
+    # ==========================================
+    if 'education' in sections and sections['education']:
+        for edu in sections['education']:
+            school = edu.get('universityName', '')[:50]  # Limit to 50 chars
+            degree = edu.get('degree', '')[:50] if edu.get('degree') else None
+            
+            # Parse dates from "Sep. 2017 – May 2021" format
+            dates_str = edu.get('datesAttended', '')
+            start_date, end_date = _parse_date_range(dates_str)
+            
+            if school:  # Only insert if school name exists
+                # Check if education already exists
+                cursor.execute("""
+                    SELECT id FROM education 
+                    WHERE user_id = %s AND school = %s AND degree = %s
+                """, (user_id, school, degree))
+                
+                existing = cursor.fetchone()
+                
+                if not existing:
+                    cursor.execute("""
+                        INSERT INTO education (user_id, school, degree, start_date, end_date)
+                        VALUES (%s, %s, %s, %s, %s)
+                    """, (user_id, school, degree, start_date, end_date))
+    
+    # ==========================================
+    # Sync Work Experience
+    # ==========================================
+    if 'work_experience' in sections and sections['work_experience']:
+        for work in sections['work_experience']:
+            job_title = work.get('jobTitle', '')[:50]
+            
+            # Parse dates
+            dates_str = work.get('dates', '')
+            start_date, end_date = _parse_date_range(dates_str)
+            
+            if job_title and start_date:  # job_title and start_date are required
+                # Check if work experience already exists
+                cursor.execute("""
+                    SELECT id FROM work_experiences 
+                    WHERE user_id = %s AND job_title = %s AND start_date = %s
+                """, (user_id, job_title, start_date))
+                
+                existing = cursor.fetchone()
+                
+                if not existing:
+                    cursor.execute("""
+                        INSERT INTO work_experiences (user_id, job_title, start_date, end_date)
+                        VALUES (%s, %s, %s, %s)
+                    """, (user_id, job_title, start_date, end_date))
+    
+    # ==========================================
+    # Sync Projects
+    # ==========================================
+    if 'projects' in sections and sections['projects']:
+        for project in sections['projects']:
+            project_title = project.get('title', '')[:50]
+            description = project.get('description', '')[:200] if project.get('description') else None
+            
+            # Parse dates
+            dates_str = project.get('dates', '')
+            start_date, end_date = _parse_date_range(dates_str)
+            
+            if project_title:  # Only insert if title exists
+                # Check if project already exists
+                cursor.execute("""
+                    SELECT id FROM projects 
+                    WHERE user_id = %s AND title = %s
+                """, (user_id, project_title))
+                
+                existing = cursor.fetchone()
+                
+                if not existing:
+                    cursor.execute("""
+                        INSERT INTO projects (user_id, title, start_date, end_date, description)
+                        VALUES (%s, %s, %s, %s, %s)
+                    """, (user_id, project_title, start_date, end_date, description))
+    
+    # ==========================================
+    # Sync Skills
+    # ==========================================
+    if 'skills' in sections and sections['skills']:
+        # Clear existing user skills mapping
+        cursor.execute("DELETE FROM user_skill_map WHERE user_id = %s", (user_id,))
+        
+        for skill_category in sections['skills']:
+            category = skill_category.get('category', 'Other')
+            items = skill_category.get('items', [])
+            
+            for skill_name in items:
+                if skill_name:
+                    skill_name = skill_name.strip()[:50]
+                    
+                    # Check if skill exists
+                    cursor.execute("SELECT id FROM skills WHERE name = %s", (skill_name,))
+                    skill = cursor.fetchone()
+                    
+                    if skill:
+                        skill_id = skill['id']
+                    else:
+                        # Create new skill
+                        cursor.execute("""
+                            INSERT INTO skills (name, category)
+                            VALUES (%s, %s)
+                        """, (skill_name, category))
+                        skill_id = cursor.lastrowid
+                    
+                    # Map user to skill
+                    cursor.execute("""
+                        INSERT INTO user_skill_map (user_id, skill_id)
+                        VALUES (%s, %s)
+                        ON DUPLICATE KEY UPDATE skill_id = skill_id
+                    """, (user_id, skill_id))
+
+
+# ==========================================
+# Helper Function: Parse Date Range
+# ==========================================
+def _parse_date_range(dates_str):
+    """
+    Parse date range string like "Sep. 2017 – May 2021" or "Jun. 2021 – Present"
+    Returns (start_date, end_date) as strings in 'YYYY-MM-DD' format or None
+    """
+    if not dates_str:
+        return None, None
+    
+    # Split by various dash characters
+    dates_str = dates_str.replace('–', '-').replace('—', '-')
+    parts = [p.strip() for p in dates_str.split('-')]
+    
+    if len(parts) < 2:
+        return None, None
+    
+    start_str = parts[0].strip()
+    end_str = parts[1].strip()
+    
+    start_date = _parse_single_date(start_str)
+    end_date = _parse_single_date(end_str) if end_str.lower() != 'present' else None
+    
+    return start_date, end_date
+
+
+# ==========================================
+# Helper Function: Parse Single Date
+# ==========================================
+def _parse_single_date(date_str):
+    """
+    Parse date string like "Sep. 2017" or "September 2017"
+    Returns date string in 'YYYY-MM-DD' format or None
+    """
+    if not date_str:
+        return None
+    
+    month_map = {
+        'jan': '01', 'january': '01',
+        'feb': '02', 'february': '02',
+        'mar': '03', 'march': '03',
+        'apr': '04', 'april': '04',
+        'may': '05',
+        'jun': '06', 'june': '06',
+        'jul': '07', 'july': '07',
+        'aug': '08', 'august': '08',
+        'sep': '09', 'september': '09',
+        'oct': '10', 'october': '10',
+        'nov': '11', 'november': '11',
+        'dec': '12', 'december': '12'
+    }
+    
+    try:
+        # Remove periods and split
+        date_str = date_str.replace('.', '').strip()
+        parts = date_str.split()
+        
+        if len(parts) >= 2:
+            month_str = parts[0].lower()
+            year_str = parts[1]
+            
+            if month_str in month_map and year_str.isdigit():
+                month = month_map[month_str]
+                year = year_str
+                return f"{year}-{month}-01"
+    except:
+        pass
+    
+    return None

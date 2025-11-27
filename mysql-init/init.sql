@@ -90,13 +90,6 @@ CREATE TABLE IF NOT EXISTS work_experiences (
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
-CREATE TABLE IF NOT EXISTS work_responsibilities (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    work_exp_id INT NOT NULL,
-    responsibility TEXT NOT NULL,
-    FOREIGN KEY (work_exp_id) REFERENCES work_experiences(id) ON DELETE CASCADE
-);
-
 CREATE TABLE IF NOT EXISTS job_requirements (
     id INT AUTO_INCREMENT PRIMARY KEY,
     job_id INT NOT NULL,
@@ -125,7 +118,6 @@ CREATE INDEX idx_resumes_user ON resumes(user_id);
 CREATE INDEX idx_education_user ON education(user_id);
 CREATE INDEX idx_projects_user ON projects(user_id);
 CREATE INDEX idx_work_experiences_user ON work_experiences(user_id);
-CREATE INDEX idx_work_responsibilities_exp ON work_responsibilities(work_exp_id);
 CREATE INDEX idx_job_postings_company ON job_postings(company_id);
 CREATE INDEX idx_job_requirements_job ON job_requirements(job_id);
 CREATE INDEX idx_user_skill_map_user ON user_skill_map(user_id);
