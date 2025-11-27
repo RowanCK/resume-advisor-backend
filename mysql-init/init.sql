@@ -42,8 +42,8 @@ CREATE TABLE IF NOT EXISTS resumes (
     job_id INT NOT NULL,
     title VARCHAR(50) NOT NULL,
     content TEXT NOT NULL,
-    creation_date DATE NOT NULL,
-    last_updated DATE NOT NULL,
+    creation_date DATETIME NOT NULL,
+    last_updated DATETIME NOT NULL,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
     FOREIGN KEY (job_id) REFERENCES job_postings(id) ON DELETE CASCADE
 );

@@ -11,6 +11,7 @@ from ..utils import get_db, success_response, error_response, validate_required_
 
 resumes_bp = Blueprint('resumes', __name__, url_prefix='/resumes')
 
+
 # ==========================================
 # Get Resume by ID
 # ==========================================
@@ -58,12 +59,12 @@ def get_resume(auth_user_id, resume_id):
                   example: 201
                 creation_date:
                   type: string
-                  format: date
-                  example: "2025-10-25"
+                  format: date-time
+                  example: "2025-10-25 14:30"
                 last_updated:
                   type: string
-                  format: date
-                  example: "2025-10-26"
+                  format: date-time
+                  example: "2025-10-26 16:45"
                 sections:
                   type: object
                   properties:
@@ -71,12 +72,16 @@ def get_resume(auth_user_id, resume_id):
                       type: array
                       items:
                         type: string
-                      example: ["education", "work_experience", "projects", "skills"]
+                      example: ["education", "work_experience", "leadership", "projects", "skills"]
                     education:
                       type: array
                       items:
                         type: object
                     work_experience:
+                      type: array
+                      items:
+                        type: object
+                    leadership:
                       type: array
                       items:
                         type: object
@@ -117,8 +122,8 @@ def get_resume(auth_user_id, resume_id):
     # Fetch resume and verify ownership
     cursor.execute("""
         SELECT id, user_id, job_id, title, content, 
-               DATE_FORMAT(creation_date, '%%Y-%%m-%%d') as creation_date,
-               DATE_FORMAT(last_updated, '%%Y-%%m-%%d') as last_updated
+               DATE_FORMAT(creation_date, '%%Y-%%m-%%d %%H:%%i') as creation_date,
+               DATE_FORMAT(last_updated, '%%Y-%%m-%%d %%H:%%i') as last_updated
         FROM resumes
         WHERE id = %s
     """, (resume_id,))
@@ -196,7 +201,7 @@ def save_resume(auth_user_id):
                   type: array
                   items:
                     type: string
-                  example: ["education", "work_experience", "projects", "skills"]
+                  example: ["education", "work_experience", "leadership", "projects", "skills"]
                 education:
                   type: array
                   items:
@@ -216,6 +221,21 @@ def save_resume(auth_user_id):
                   type: array
                   items:
                     type: object
+                leadership:
+                  type: array
+                  items:
+                    type: object
+                  example: [
+                    {
+                      "id": "1",
+                      "position": "President, Computer Science Club",
+                      "organization": "State University",
+                      "location": "City, State",
+                      "dates": "Sep. 2019 – May 2021",
+                      "responsibilities": ["Led team of 20 members", "Organized hackathons"],
+                      "order": 0
+                    }
+                  ]
                 projects:
                   type: array
                   items:
@@ -306,7 +326,7 @@ def save_resume(auth_user_id):
     except (TypeError, ValueError) as e:
         return error_response(f'Invalid sections format: {str(e)}', 400)
     
-    current_date = datetime.now().strftime('%Y-%m-%d')
+    current_date = datetime.now().strftime('%Y-%m-%d %H:%M')
     
     # Update existing resume
     if resume_id:
