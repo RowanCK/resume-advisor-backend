@@ -54,8 +54,8 @@ CREATE TABLE IF NOT EXISTS cover_letters (
     job_id INT,
     title VARCHAR(50) NOT NULL,
     content TEXT NOT NULL,
-    creation_date DATE NOT NULL,
-    last_updated DATE NOT NULL,
+    creation_date DATETIME NOT NULL,
+    last_updated DATETIME NOT NULL,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
