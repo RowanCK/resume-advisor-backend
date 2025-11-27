@@ -193,11 +193,19 @@ def update_user_profile(auth_user_id):
     if not update_fields:
         return error_response('No valid fields to update', 400)
     
-    # Add user_id to values
-    update_values.append(auth_user_id)
-    
     mysql = get_db()
     cursor = mysql.connection.cursor()
+    
+    # First, check if user exists
+    cursor.execute("SELECT id FROM users WHERE id = %s", (auth_user_id,))
+    user = cursor.fetchone()
+    
+    if not user:
+        cursor.close()
+        return error_response('User not found', 404)
+    
+    # Add user_id to values
+    update_values.append(auth_user_id)
     
     query = f"""
         UPDATE users
@@ -207,11 +215,7 @@ def update_user_profile(auth_user_id):
     
     cursor.execute(query, tuple(update_values))
     mysql.connection.commit()
-    affected_rows = cursor.rowcount
     cursor.close()
-    
-    if affected_rows == 0:
-        return error_response('User not found', 404)
     
     return success_response({
         'message': 'Profile updated successfully'
