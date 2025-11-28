@@ -366,9 +366,10 @@ def save_resume(auth_user_id):
             VALUES (%s, %s, %s, %s, %s, %s)
         """, (auth_user_id, job_id, title, content_json, current_date, current_date))
 
+        new_resume_id = cursor.lastrowid
+
         _sync_resume_data_to_tables(cursor, auth_user_id, sections)
         
-        new_resume_id = cursor.lastrowid
         mysql.connection.commit()
         cursor.close()
         
