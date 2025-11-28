@@ -65,6 +65,27 @@ def get_cover_letter(auth_user_id, cl_id):
                 content:
                   type: object
                   properties:
+                    recipient:
+                      type: string
+                      example: Hiring Manager
+                    company:
+                      type: string
+                      example: Google Inc.
+                    position:
+                      type: string
+                      example: Product Manager
+                    tone:
+                      type: string
+                      example: Professional
+                    resume_id:
+                      type: integer
+                      example: 501
+                    descriptive_prompt:
+                      type: string
+                      example: I want to emphasize my leadership experience and technical skills in cloud architecture.
+                    closing_signature:
+                      type: string
+                      example: Yi-Kai Chen
                     paragraphs:
                       type: array
                       items:
@@ -169,14 +190,43 @@ def save_cover_letter(auth_user_id):
               example: 201
             content:
               type: object
+              required:
+                - recipient
+                - company
+                - position
+                - tone
               properties:
+                recipient:
+                  type: string
+                  example: Hiring Manager
+                company:
+                  type: string
+                  example: Google Inc.
+                position:
+                  type: string
+                  example: Product Manager
+                tone:
+                  type: string
+                  example: Professional
+                  enum: [Professional, Friendly, Enthusiastic, Formal]
+                resume_id:
+                  type: integer
+                  example: 501
+                  description: Associated resume ID (optional)
+                descriptive_prompt:
+                  type: string
+                  example: I want to emphasize my leadership experience and technical skills in cloud architecture. The tone should be enthusiastic and highlight my passion for innovation.
+                closing_signature:
+                  type: string
+                  example: Yi-Kai Chen
                 paragraphs:
                   type: array
                   items:
                     type: string
                   example: [
                     "Dear Hiring Manager,",
-                    "I am writing to express my strong interest in the Software Engineer position at Google. With over 5 years of experience in full-stack development and a proven track record of delivering scalable solutions, I am excited about the opportunity to contribute to your team.",
+                    "I am writing to express my strong interest in the Product Manager position at Google Inc. With over 5 years of experience in product development and a proven track record of delivering innovative solutions, I am excited about the opportunity to contribute to your team.",
+                    "My leadership experience includes managing cross-functional teams and driving product strategy from conception to launch. I am particularly drawn to Google's commitment to innovation and would love to bring my passion for technology to your organization.",
                     "Thank you for considering my application. I look forward to discussing how my skills and experience align with your needs.",
                     "Sincerely,",
                     "Yi-Kai Chen"
@@ -252,9 +302,19 @@ def save_cover_letter(auth_user_id):
     except ValueError as e:
         return error_response(str(e), 400)
     
+    # Validate content required fields
+    content = data['content']
+    if not isinstance(content, dict):
+        return error_response('Content must be an object', 400)
+    
+    # Check required fields in content
+    content_required_fields = ['recipient', 'company', 'position', 'tone']
+    missing_fields = [field for field in content_required_fields if field not in content]
+    if missing_fields:
+        return error_response(f'Missing required fields in content: {", ".join(missing_fields)}', 400)
+    
     title = data['title']
     job_id = data['job_id']
-    content = data['content']
     cl_id = data.get('id')  # Optional for updates
 
     mysql = get_db()
@@ -266,6 +326,21 @@ def save_cover_letter(auth_user_id):
     if not job:
         cursor.close()
         return error_response(f'Invalid job_id: {job_id} does not exist', 400)
+    
+    # If resume_id is provided, verify it exists and belongs to user
+    if 'resume_id' in content and content['resume_id']:
+        cursor.execute("""
+            SELECT id, user_id FROM resumes WHERE id = %s
+        """, (content['resume_id'],))
+        resume = cursor.fetchone()
+        
+        if not resume:
+            cursor.close()
+            return error_response(f'Invalid resume_id: {content["resume_id"]} does not exist', 400)
+        
+        if resume['user_id'] != auth_user_id:
+            cursor.close()
+            return error_response('The specified resume does not belong to you', 403)
     
     # Convert content to JSON string
     try:
