@@ -550,6 +550,7 @@ def _sync_resume_data_to_tables(cursor, user_id, sections):
                         VALUES (%s, %s, %s, %s, %s)
                     """, (user_id, project_title, start_date, end_date, description))
     
+
     # ==========================================
     # Sync Skills
     # ==========================================
@@ -557,34 +558,92 @@ def _sync_resume_data_to_tables(cursor, user_id, sections):
         # Clear existing user skills mapping
         cursor.execute("DELETE FROM user_skill_map WHERE user_id = %s", (user_id,))
         
-        for skill_category in sections['skills']:
-            category = skill_category.get('category', 'Other')
-            items = skill_category.get('items', [])
-            
-            for skill_name in items:
-                if skill_name:
-                    skill_name = skill_name.strip()[:50]
-                    
-                    # Check if skill exists
-                    cursor.execute("SELECT id FROM skills WHERE name = %s", (skill_name,))
-                    skill = cursor.fetchone()
-                    
-                    if skill:
-                        skill_id = skill['id']
-                    else:
-                        # Create new skill
+        skills_data = sections['skills']
+        
+        # Handle both formats:
+        # Format 1: {"languages": "Python, Java", "developerTools": "Git"}
+        # Format 2: [{"category": "Languages", "items": ["Python", "Java"]}]
+        
+        if isinstance(skills_data, dict):
+            # Format 1: Dictionary with categories as keys
+            for category_key, skills_str in skills_data.items():
+                if not skills_str:
+                    continue
+                
+                # Convert camelCase to readable format
+                category = category_key.replace('_', ' ').title()
+                if category_key == 'languages':
+                    category = 'Languages'
+                elif category_key == 'developerTools':
+                    category = 'Developer Tools'
+                elif category_key == 'technologiesFrameworks':
+                    category = 'Technologies & Frameworks'
+                
+                # Split comma-separated skills
+                if isinstance(skills_str, str):
+                    skill_items = [s.strip() for s in skills_str.split(',') if s.strip()]
+                else:
+                    skill_items = []
+                
+                # Insert each skill
+                for skill_name in skill_items:
+                    if skill_name:
+                        skill_name = skill_name.strip()[:50]
+                        
+                        # Check if skill exists
+                        cursor.execute("SELECT id FROM skills WHERE name = %s", (skill_name,))
+                        skill = cursor.fetchone()
+                        
+                        if skill:
+                            skill_id = skill['id']
+                        else:
+                            # Create new skill
+                            cursor.execute("""
+                                INSERT INTO skills (name, category)
+                                VALUES (%s, %s)
+                            """, (skill_name, category))
+                            skill_id = cursor.lastrowid
+                        
+                        # Map user to skill
                         cursor.execute("""
-                            INSERT INTO skills (name, category)
+                            INSERT INTO user_skill_map (user_id, skill_id)
                             VALUES (%s, %s)
-                        """, (skill_name, category))
-                        skill_id = cursor.lastrowid
-                    
-                    # Map user to skill
-                    cursor.execute("""
-                        INSERT INTO user_skill_map (user_id, skill_id)
-                        VALUES (%s, %s)
-                        ON DUPLICATE KEY UPDATE skill_id = skill_id
-                    """, (user_id, skill_id))
+                            ON DUPLICATE KEY UPDATE skill_id = skill_id
+                        """, (user_id, skill_id))
+        
+        elif isinstance(skills_data, list):
+            # Format 2: Array of skill categories
+            for skill_category in skills_data:
+                if not isinstance(skill_category, dict):
+                    continue
+                
+                category = skill_category.get('category', 'Other')
+                items = skill_category.get('items', [])
+                
+                for skill_name in items:
+                    if skill_name:
+                        skill_name = skill_name.strip()[:50]
+                        
+                        # Check if skill exists
+                        cursor.execute("SELECT id FROM skills WHERE name = %s", (skill_name,))
+                        skill = cursor.fetchone()
+                        
+                        if skill:
+                            skill_id = skill['id']
+                        else:
+                            # Create new skill
+                            cursor.execute("""
+                                INSERT INTO skills (name, category)
+                                VALUES (%s, %s)
+                            """, (skill_name, category))
+                            skill_id = cursor.lastrowid
+                        
+                        # Map user to skill
+                        cursor.execute("""
+                            INSERT INTO user_skill_map (user_id, skill_id)
+                            VALUES (%s, %s)
+                            ON DUPLICATE KEY UPDATE skill_id = skill_id
+                        """, (user_id, skill_id))
 
 
 # ==========================================

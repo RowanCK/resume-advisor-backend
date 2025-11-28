@@ -205,12 +205,19 @@ def handle_errors(f):
                 'error': str(e)
             }), 403
         except Exception as e:
-            # Log the error
+            # Log the error with full traceback
+            import traceback
+            error_traceback = traceback.format_exc()
             current_app.logger.error(f'Unhandled error in {f.__name__}: {str(e)}')
+            current_app.logger.error(f'Traceback: {error_traceback}')
+            
+            # Also print to console for easier debugging
+            print(f'[ERROR] Unhandled error in {f.__name__}: {str(e)}')
+            print(f'[ERROR] Full traceback:\n{error_traceback}')
             
             # Return generic error in production, detailed in development
             if current_app.config['DEBUG']:
-                error_message = str(e)
+                error_message = f'{str(e)} (Type: {type(e).__name__})'
             else:
                 error_message = 'An internal error occurred'
             
