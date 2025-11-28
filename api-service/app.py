@@ -65,8 +65,8 @@ def create_app(config=None):
                 "email": "support@resumeadvisor.com"
             }
         },
-        "basePath": "/api/v1",
-        "schemes": ["https", "http"],
+        "basePath": "",
+        "schemes": ["http"],
         "securityDefinitions": {
             "Bearer": {
                 "type": "apiKey",
