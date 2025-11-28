@@ -5,6 +5,8 @@ services:
     image: mysql:8.0
     container_name: mysql-db
     restart: always
+    mem_limit: 700m
+    cpus: 0.8
     environment:
       MYSQL_ROOT_PASSWORD: rootpassword
       MYSQL_DATABASE: resume_advisor
@@ -21,6 +23,8 @@ services:
     build: ./api-service
     container_name: flask-api
     restart: always
+    mem_limit: 400m
+    cpus: 0.5
     depends_on:
       - mysql
     ports:
