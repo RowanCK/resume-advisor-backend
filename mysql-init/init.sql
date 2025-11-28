@@ -93,7 +93,7 @@ CREATE TABLE IF NOT EXISTS work_experiences (
 CREATE TABLE IF NOT EXISTS job_requirements (
     id INT AUTO_INCREMENT PRIMARY KEY,
     job_id INT NOT NULL,
-    requirement VARCHAR(50) NOT NULL,
+    requirement TEXT NOT NULL,
     FOREIGN KEY (job_id) REFERENCES job_postings(id) ON DELETE CASCADE
 );
 
