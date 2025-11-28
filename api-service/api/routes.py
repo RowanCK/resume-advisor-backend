@@ -14,7 +14,8 @@ from .endpoints import (
     ai_bp
 )
 
-api_bp = Blueprint('api', __name__, url_prefix='/api/v1')
+# api_bp = Blueprint('api', __name__, url_prefix='/api/v1') when use nginx
+api_bp = Blueprint('api', __name__, url_prefix='')
 
 # Register all sub-blueprints
 api_bp.register_blueprint(health_bp)

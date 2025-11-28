@@ -24,7 +24,7 @@ services:
     depends_on:
       - mysql
     ports:
-      - "80:8080" # 把 host 的 80 映射到 container 的 8080
+      - "80:8080"
     env_file:
       - ./.env
     networks:
