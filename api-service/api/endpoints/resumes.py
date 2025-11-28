@@ -368,8 +368,8 @@ def save_resume(auth_user_id):
 
         _sync_resume_data_to_tables(cursor, auth_user_id, sections)
         
-        mysql.connection.commit()
         new_resume_id = cursor.lastrowid
+        mysql.connection.commit()
         cursor.close()
         
         return success_response({
