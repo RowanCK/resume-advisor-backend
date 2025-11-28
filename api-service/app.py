@@ -28,7 +28,8 @@ def create_app(config=None):
     # In production, replace '*' with your specific frontend domain
     CORS(app, resources={
         r"/api/*": {
-            "origins": "*",  # 允許所有來源，生產環境建議改為具體域名
+            "origins": "*", 
+            # "origins": ["https://resume-advisor-next.vercel.app"],  # only allow this origin in production
             "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
             "allow_headers": ["Content-Type", "Authorization"],
             "expose_headers": ["Content-Type", "Authorization"],
