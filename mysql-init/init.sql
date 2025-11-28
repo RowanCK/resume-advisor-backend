@@ -65,7 +65,7 @@ CREATE TABLE IF NOT EXISTS education (
     school VARCHAR(50) NOT NULL,
     program VARCHAR(50),
     degree VARCHAR(50),
-    gpa DOUBLE,
+    gpa DOUBLE NULL,
     start_date DATE,
     end_date DATE,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
@@ -77,7 +77,7 @@ CREATE TABLE IF NOT EXISTS projects (
     title VARCHAR(50) NOT NULL,
     start_date DATE,
     end_date DATE,
-    description VARCHAR(200),
+    description TEXT,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
